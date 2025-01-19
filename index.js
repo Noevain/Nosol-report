@@ -68,6 +68,12 @@ app.post('/report', (req, res) => {
     );
 });
 
+
+app.get('/',(req,res)=>{
+    res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('What are you doing here?\n');
+});
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
