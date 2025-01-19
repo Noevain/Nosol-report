@@ -42,11 +42,27 @@ db.run(createTableQuery, (err) => {
 
 // /report route
 app.post('/report', (req, res) => {
-    const { report_version, model_version, timestamp, type, sender, content, reason, suggested_classification } = req.body;
+    const requiredFields = [
+        'report_version',
+        'model_version',
+        'timestamp',
+        'type',
+        'sender',
+        'content',
+        'reason',
+        'suggested_classification'
+    ];
 
-    if (!report_version || !model_version || !timestamp || !type || !sender || !content || !reason || !suggested_classification) {
-        return res.status(400).send({ error: 'Missing required fields in the JSON payload.' });
+    const missingFields = requiredFields.filter(field => !(field in req.body));
+
+    if (missingFields.length > 0) {
+        console.log("Missing field from report:",missingFields.join(', '))
+        return res.status(400).send({
+            error: `Missing required fields: ${missingFields.join(', ')}`
+        });
     }
+    
+    const { report_version, model_version, timestamp, type, sender, content, reason, suggested_classification } = req.body;
 
     const insertQuery = `
     INSERT INTO reports (report_version, model_version, timestamp, type, sender, content, reason, suggested_classification)
