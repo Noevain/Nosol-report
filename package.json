@@ -1,0 +1,14 @@
+{
+  "name": "Nosol-report",
+  "version": "0.0.1",
+  "description": "report backend for nosol ffxiv plugin",
+  "main": "index.js",
+  "repository": "https://github.com/Noevain/Nosol-report",
+  "author": "Noevain",
+  "license": "GPL-3.0",
+  "private": false,
+  "dependencies": {
+    "express": "^4.21.2",
+    "sqlite3": "^5.1.7"
+  }
+}
