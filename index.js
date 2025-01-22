@@ -57,7 +57,7 @@ app.post('/report', (req, res) => {
 
     if (missingFields.length > 0) {
         console.log("Missing field from report:",missingFields.join(', '))
-        return res.status(400).send({
+        return res.status(422).send({
             error: `Missing required fields: ${missingFields.join(', ')}`
         });
     }
