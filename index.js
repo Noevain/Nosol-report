@@ -84,6 +84,22 @@ app.post('/report', (req, res) => {
     );
 });
 
+app.get('/manifest',(req,res)=>{
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(
+        path.join(__dirname, "manifest.yaml")
+    );
+});
+
+app.get('/model',(req,res)=>{
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/zip');
+    res.sendFile(
+        path.join(__dirname, "model.zip")
+    );
+});
+
 
 app.get('/',(req,res)=>{
     res.statusCode = 200;
