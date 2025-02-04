@@ -2,7 +2,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
-const helpers = require('helpers');
+const helpers = require('./helpers');
 const app = express();
 const port = 3000;
 const csvFilePath = path.join(__dirname, 'accepted_reports.csv');
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS reports (
     model_version INT,
     timestamp TEXT,
     type INT,
-    sender TEXT,
-    content TEXT,
+    sender BLOB,
+    content BLOB,
     reason TEXT,
     suggested_classification TEXT
 );
@@ -144,11 +144,12 @@ app.get('/review',authenticate, (req, res) => {
         if (!report) {
             return res.send('<h1>No reports to review</h1>');
         }
-        
+        var tmp = helpers.decodeField(report.content)
+        console.log(tmp);
         let html = `<h1>Review Report</h1>
             <div>
-                <p><strong>Sender:</strong> ${report.sender}</p>
-                <p><strong>Content:</strong> ${report.content}</p>
+                <p><strong>Sender:</strong> ${helpers.doReplacements(helpers.getText(report.sender))}</p>
+                <p><strong>Content:</strong> ${helpers.getText(report.content)}</p>
                 <p><strong>Type:</strong> ${report.type}</p>
                 <p><strong>Reason:</strong> ${report.reason}</p>
                 <p><strong>Suggested:</strong> ${report.suggested_classification}</p>
@@ -156,7 +157,7 @@ app.get('/review',authenticate, (req, res) => {
                     <input type="hidden" name="id" value="${report.id}" />
                     <input type="hidden" name="category" value="${report.suggested_classification}" />
                     <input type="hidden" name="channel" value="${report.type}" />
-                    <input type="hidden" name="text" value="${report.content}" />
+                    <input type="hidden" name="text" value="${helpers.getText(report.content)}" />
                     <button type="submit">Accept</button>
                 </form>
                 <form action="/reject" method="POST">
