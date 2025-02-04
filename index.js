@@ -2,6 +2,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const helpers = require('helpers');
 const app = express();
 const port = 3000;
 const csvFilePath = path.join(__dirname, 'accepted_reports.csv');
@@ -17,6 +18,38 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.log('Connected to SQLite database.');
     }
 });
+
+// Simple authentication middleware
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+function authenticate(req, res, next) {
+    const authheader = req.headers.authorization;
+    console.log(req.headers);
+
+    if (!authheader) {
+        let err = new Error('This route require auth');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        return next(err)
+    }
+
+    const auth = new Buffer.from(authheader.split(' ')[1],
+        'base64').toString().split(':');
+    const user = auth[0];
+    const pass = auth[1];
+
+    if (user == ADMIN_USER && pass == ADMIN_PASSWORD) {
+
+        // If Authorized user
+        next();
+    } else {
+        let err = new Error('This route require auth');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        return next(err);
+    }
+
+}
 
 // Create the reports table if it doesn't exist
 const createTableQuery = `
@@ -103,7 +136,7 @@ app.get('/model',(req,res)=>{
 
 
 // /review route (display one report at a time)
-app.get('/review', (req, res) => {
+app.get('/review',authenticate, (req, res) => {
     db.get('SELECT * FROM reports ORDER BY id LIMIT 1', [], (err, report) => {
         if (err) {
             return res.status(500).send('Error fetching reports');
@@ -116,11 +149,13 @@ app.get('/review', (req, res) => {
             <div>
                 <p><strong>Sender:</strong> ${report.sender}</p>
                 <p><strong>Content:</strong> ${report.content}</p>
+                <p><strong>Type:</strong> ${report.type}</p>
                 <p><strong>Reason:</strong> ${report.reason}</p>
+                <p><strong>Suggested:</strong> ${report.suggested_classification}</p>
                 <form action="/accept" method="POST">
                     <input type="hidden" name="id" value="${report.id}" />
                     <input type="hidden" name="category" value="${report.suggested_classification}" />
-                    <input type="hidden" name="channel" value="${report.sender}" />
+                    <input type="hidden" name="channel" value="${report.type}" />
                     <input type="hidden" name="text" value="${report.content}" />
                     <button type="submit">Accept</button>
                 </form>
@@ -134,7 +169,7 @@ app.get('/review', (req, res) => {
 });
 
 // Accept report
-app.post('/accept', (req, res) => {
+app.post('/accept',authenticate, (req, res) => {
     const { id, category, channel, text } = req.body;
     
     const csvLine = `${category},${channel},${text}\n`;
@@ -153,7 +188,7 @@ app.post('/accept', (req, res) => {
 });
 
 // Reject report
-app.post('/reject', (req, res) => {
+app.post('/reject',authenticate, (req, res) => {
     const { id } = req.body;
     db.run('DELETE FROM reports WHERE id = ?', [id], (err) => {
         if (err) {
